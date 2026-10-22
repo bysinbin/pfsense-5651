@@ -73,7 +73,7 @@ foreach ($archives as $a) {
 }
 $grant_ratio = ($total_archives > 0) ? round(($granted_count / $total_archives) * 100) : 100;
 
-$daemon_running = is_service_running("posea_5651");
+$daemon_running = posea_5651_is_running();
 $pid = file_exists(POSEA_5651_PID) ? trim(file_get_contents(POSEA_5651_PID)) : '-';
 ?>
 

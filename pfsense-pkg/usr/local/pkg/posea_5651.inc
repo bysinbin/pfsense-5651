@@ -26,6 +26,18 @@ define('POSEA_5651_RC', '/usr/local/etc/rc.d/posea_5651.sh');
 @mkdir(POSEA_5651_ACTIVE_DIR, 0755, true);
 @mkdir(POSEA_5651_ARCHIVE_DIR, 0755, true);
 
+function posea_5651_is_running() {
+    $pidfile = POSEA_5651_PID;
+    if (file_exists($pidfile)) {
+        $pid = intval(trim(file_get_contents($pidfile)));
+        if ($pid > 0 && posix_kill($pid, 0)) {
+            return true;
+        }
+    }
+    $out = trim(shell_exec("/usr/bin/pgrep -f posea_5651d.php 2>/dev/null") ?? '');
+    return !empty($out);
+}
+
 function posea_5651_log($msg, $level = "INFO") {
     $ts = date("Y-m-d H:i:s");
     $line = "[{$ts}] [{$level}] {$msg}\n";
