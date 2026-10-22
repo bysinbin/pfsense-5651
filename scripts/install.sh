@@ -120,11 +120,39 @@ if ($changed) {
 }
 '
 
-# 4. Cache temizle
-rm -f /tmp/config.cache
+# 4. FreeBSD pkg veritabanına kaydet (System > Package Manager)
+echo "[*] Step 4: FreeBSD Paket Yöneticisine kaydediliyor..."
+cat << 'EOF' > /tmp/manifest_posea_5651.ucl
+name: "pfSense-pkg-Posea5651"
+origin: "security/pfSense-pkg-Posea5651"
+version: "1.0.0"
+comment: "5651 Yasal Loglama ve TUBITAK/RFC 3161 Zaman Damgasi"
+maintainer: "bysinbin"
+www: "https://github.com/bysinbin/pfsense-5651"
+abi: "FreeBSD:15:amd64"
+arch: "freebsd:15:x86:64"
+prefix: "/usr/local"
+flatsize: 256000
+desc: "5651 sayili kanun uyumlu IPDR, DHCP, NAT ve AD SSO oturum loglama paketi. Gunluk SHA-256 ozeti cikarir ve TUBITAK KamuSM / RFC 3161 Zaman Damgasi ile muhurler."
+categories: [
+    "security"
+]
+annotations: {
+    FreeBSD_version: "1500029",
+    repository: "pfSense"
+}
+files: {
+    /usr/local/pkg/posea_5651d.php: "-"
+}
+EOF
+/usr/local/sbin/pkg-static register -t -M /tmp/manifest_posea_5651.ucl 2>/dev/null || true
+rm -f /tmp/manifest_posea_5651.ucl
 
-# 5. Servisi Başlat
-echo "[*] Step 4: Posea 5651 Servisi Başlatılıyor..."
+# 5. Cache temizle
+rm -f /tmp/config.cache /tmp/pkg_cache.json
+
+# 6. Servisi Başlat
+echo "[*] Step 5: Posea 5651 Servisi Başlatılıyor..."
 /usr/local/etc/rc.d/posea_5651.sh restart
 
 echo "=========================================================="
