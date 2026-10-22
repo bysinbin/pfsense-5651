@@ -65,7 +65,28 @@ if (!$found) {
         "configurationfile" => "posea_5651.xml"
     );
     $changed = true;
-    echo "  -> posea5651 paketi menuye eklendi.\n";
+    echo "  -> posea5651 paketi paket listesine eklendi.\n";
+}
+
+// Register in menu
+$menus = config_get_path("installedpackages/menu", []);
+$menu_found = false;
+foreach ($menus as $m) {
+    if (($m["name"] ?? "") === "5651 Yasal Loglama" || ($m["configfile"] ?? "") === "posea_5651.xml") {
+        $menu_found = true;
+        break;
+    }
+}
+if (!$menu_found) {
+    $menus[] = array(
+        "name" => "5651 Yasal Loglama",
+        "section" => "Services",
+        "configfile" => "posea_5651.xml",
+        "url" => "/pkg_edit.php?xml=posea_5651.xml"
+    );
+    config_set_path("installedpackages/menu", $menus);
+    $changed = true;
+    echo "  -> 5651 Yasal Loglama menuye eklendi.\n";
 }
 
 // Register default config
