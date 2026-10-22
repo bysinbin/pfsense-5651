@@ -33,6 +33,12 @@ chmod 755 /usr/local/etc/rc.d/posea_5651.sh
 cp -f "${BASE_DIR}/pfsense-pkg/usr/local/www/posea_5651_archives.php" /usr/local/www/
 cp -f "${BASE_DIR}/pfsense-pkg/usr/local/www/posea_5651_live.php" /usr/local/www/
 cp -f "${BASE_DIR}/pfsense-pkg/usr/local/www/posea_5651_test.php" /usr/local/www/
+cp -f "${BASE_DIR}/pfsense-pkg/usr/local/www/posea_5651_backup.php" /usr/local/www/
+
+if [ -f "${BASE_DIR}/pfsense-pkg/usr/local/bin/posea-smb-sync" ]; then
+    cp -f "${BASE_DIR}/pfsense-pkg/usr/local/bin/posea-smb-sync" /usr/local/bin/
+    chmod 755 /usr/local/bin/posea-smb-sync
+fi
 
 # 3. pfSense config.xml içine paketi kaydet
 echo "[*] Step 3: Paket pfSense config.xml'e kaydediliyor..."

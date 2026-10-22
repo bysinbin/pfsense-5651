@@ -7,6 +7,7 @@ require_once("guiconfig.inc");
 require_once("/usr/local/pkg/posea_5651.inc");
 
 $cfg = posea_5651_get_config();
+$bcfg = posea_5651_get_backup_config();
 $archives = posea_5651_get_archives();
 
 // Handle File Downloads
@@ -34,6 +35,15 @@ if (isset($_GET['download']) && !empty($_GET['date'])) {
         header('Content-Disposition: attachment; filename="5651_' . $d . '.tsr"');
         readfile("{$base}.tsr");
         exit;
+    } elseif ($type === 'zip') {
+        $zip_file = posea_5651_create_zip_archive($d);
+        if ($zip_file && file_exists($zip_file)) {
+            header('Content-Type: application/zip');
+            header('Content-Disposition: attachment; filename="5651_' . $d . '.zip"');
+            header('Content-Length: ' . filesize($zip_file));
+            readfile($zip_file);
+            exit;
+        }
     }
 }
 
@@ -51,6 +61,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $action_msg = "{$sign_date} gününe ait aktif log bulunamadı veya henüz veri oluşmadı.";
         }
         $archives = posea_5651_get_archives();
+    } elseif ($act === 'sync_remote') {
+        $sync_date = $_POST['date'] ?: '';
+        if ($sync_date) {
+            $res = posea_5651_sync_archive($sync_date);
+            $action_msg = $res['message'];
+            $archives = posea_5651_get_archives();
+        }
     }
 }
 
@@ -62,6 +79,7 @@ $tab_array[] = array(gettext("Genel Ayarlar"), false, "/pkg_edit.php?xml=posea_5
 $tab_array[] = array(gettext("İmzalı Günlük Arşivler"), true, "/posea_5651_archives.php");
 $tab_array[] = array(gettext("Canlı Yasal Log İzleyici"), false, "/posea_5651_live.php");
 $tab_array[] = array(gettext("Zaman Damgası (TSA) Testi"), false, "/posea_5651_test.php");
+$tab_array[] = array(gettext("Uzak Yedekleme (SMB/NFS/iSCSI)"), false, "/posea_5651_backup.php");
 display_top_tabs($tab_array);
 
 $total_archives = count($archives);
@@ -78,94 +96,98 @@ $pid = file_exists(POSEA_5651_PID) ? trim(file_get_contents(POSEA_5651_PID)) : '
 ?>
 
 <style>
-.legal-card {
-    background: #1e293b !important;
-    border: 1px solid #334155 !important;
-    border-radius: 8px !important;
-    padding: 16px 14px !important;
-    margin-bottom: 18px !important;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.25) !important;
-    text-align: center;
+.stat-box {
+    background: #1e293b;
+    color: #f8fafc;
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+    border: 1px solid #334155;
 }
-.legal-card-title {
-    color: #e2e8f0 !important;
-    font-size: 0.85rem !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
-    margin: 0 0 8px 0 !important;
+.stat-box .val {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-top: 4px;
 }
-.legal-card-value {
-    font-size: 2.2rem !important;
-    font-weight: 800 !important;
-    line-height: 1.1 !important;
-    margin: 4px 0 !important;
+.stat-box .lbl {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
 }
-.legal-card-sub {
-    font-size: 0.8rem !important;
-    color: #94a3b8 !important;
-    font-weight: 500 !important;
-    margin: 0 !important;
+.stat-box .sub {
+    font-size: 12px;
+    color: #cbd5e1;
+    margin-top: 4px;
 }
 </style>
 
-<div class="row">
-    <div class="col-sm-12">
-        <?php if ($action_msg): ?>
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h2 class="panel-title"><i class="fa-solid fa-box-archive" style="margin-right: 8px;"></i>5651 İmzalı Günlük Arşivler ve Zaman Damgası Havuzu</h2>
+    </div>
+    <div class="panel-body">
+        <?php if (!empty($action_msg)): ?>
             <div class="alert alert-info alert-dismissible" role="alert">
-                <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span></button>
-                <i class="fa-solid fa-circle-info"></i> <?=$action_msg?>
+                <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+                <i class="fa-solid fa-circle-info" style="margin-right: 5px;"></i><?=htmlspecialchars($action_msg)?>
             </div>
         <?php endif; ?>
 
-        <!-- Stat Cards -->
+        <!-- Stats Overview Cards -->
         <div class="row">
-            <div class="col-md-3 col-sm-6">
-                <div class="legal-card">
-                    <p class="legal-card-title"><i class="fa-solid fa-calendar-check" style="color: #38bdf8;"></i> Mühürlü Günler</p>
-                    <div class="legal-card-value" style="color: #38bdf8 !important;"><?=$total_archives?> Gün</div>
-                    <p class="legal-card-sub"><i class="fa-solid fa-circle-check" style="color: #4ade80;"></i> Günlük Arşiv</p>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6">
-                <div class="legal-card">
-                    <p class="legal-card-title"><i class="fa-solid fa-stamp" style="color: #4ade80;"></i> Zaman Damgası Oranı</p>
-                    <div class="legal-card-value" style="color: #4ade80 !important;">%<?=$grant_ratio?></div>
-                    <p class="legal-card-sub">RFC 3161 Mühür Geçerliliği</p>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6">
-                <div class="legal-card">
-                    <p class="legal-card-title"><i class="fa-solid fa-list-ol" style="color: #fbbf24;"></i> Toplam Kayıt Satırı</p>
-                    <div class="legal-card-value" style="color: #fbbf24 !important;"><?=number_format($total_lines)?></div>
-                    <p class="legal-card-sub">IPDR / NAT / DHCP Logları</p>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6">
-                <div class="legal-card">
-                    <p class="legal-card-title"><i class="fa-solid fa-shield-halved" style="color: #c084fc;"></i> 5651 Servis Durumu</p>
-                    <div class="legal-card-value" style="font-size: 1.6rem !important; color: <?=$daemon_running ? '#4ade80' : '#f87171'?> !important;">
-                        <?=$daemon_running ? 'ÇALIŞIYOR' : 'DURDURULDU'?>
+            <div class="col-sm-3">
+                <div class="stat-box">
+                    <div class="lbl">5651 Daemon Durumu</div>
+                    <div class="val">
+                        <?php if ($daemon_running): ?>
+                            <span class="text-success"><i class="fa-solid fa-circle-check"></i> AKTİF (PID: <?=$pid?>)</span>
+                        <?php else: ?>
+                            <span class="text-danger"><i class="fa-solid fa-circle-xmark"></i> DURDURULDU</span>
+                        <?php endif; ?>
                     </div>
-                    <p class="legal-card-sub">PID: <?=$pid?> | Saklama: <?=$cfg['retention_days']?> Gün</p>
+                    <div class="sub">Yasal loglama servisi anlık kayıt alıyor</div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-box">
+                    <div class="lbl">Toplam İmzalı Günlük Arşiv</div>
+                    <div class="val text-primary"><?=$total_archives?> <span style="font-size: 15px; color: #94a3b8;">Gün</span></div>
+                    <div class="sub">RFC 3161 Mühürlü Gün Sayısı</div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-box">
+                    <div class="lbl">Hukuki Geçerlilik Oranı</div>
+                    <div class="val text-success"><?=$grant_ratio?>%</div>
+                    <div class="sub"><?=$granted_count?> / <?=$total_archives?> Gün Status: Granted</div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-box">
+                    <div class="lbl">Kayıt Altına Alınan Satır</div>
+                    <div class="val text-warning"><?=number_format($total_lines)?></div>
+                    <div class="sub">Toplam yasal IPDR / NAT / AD akışı</div>
                 </div>
             </div>
         </div>
 
-        <!-- Quick Manual Action -->
-        <div class="panel panel-default">
-            <div class="panel-heading"><h2 class="panel-title"><i class="fa-solid fa-bolt"></i> Manuel Zaman Damgalama ve Acil Kapatma</h2></div>
-            <div class="panel-body">
-                <p class="text-muted" style="margin-bottom: 10px;">
-                    Normal şartlarda sistem her gece <strong><?=$cfg['sign_time']?></strong>'da dünün logunu otomatik olarak kapatır ve TÜBİTAK/TSA sunucusuna mühürletir.
-                    Acil denetim, test veya anlık yedek alma durumunda aşağıdaki buton ile bugünün aktif logunu anında kapatıp mühürleyebilirsiniz:
-                </p>
-                <form method="post" style="display:inline-block;" onsubmit="return confirm('Bugünün aktif log dosyasını şimdi kapatıp zaman damgasıyla mühürlemek istediğinize emin misiniz?');">
-                    <input type="hidden" name="act" value="sign_now" />
-                    <input type="hidden" name="date" value="<?=date('Y-m-d')?>" />
-                    <button type="submit" class="btn btn-warning">
-                        <i class="fa-solid fa-stamp"></i> Bugünün Logunu Şimdi Mühürle (<?=date('Y-m-d')?>)
-                    </button>
+        <!-- Manual Actions Card -->
+        <div class="panel panel-default" style="margin-top: 10px;">
+            <div class="panel-body" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+                <form action="/posea_5651_archives.php" method="post" class="form-inline" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+                    <div>
+                        <strong><i class="fa-solid fa-stamp text-primary"></i> Günlük Logu Kapat ve Zaman Damgası Bas:</strong>
+                        <span class="text-muted" style="margin-left: 10px;">(Normal şartlarda her gece saat 23:59:50'de otomatik gerçekleşir)</span>
+                    </div>
+                    <div style="margin-top: 5px;">
+                        <input type="date" name="date" class="form-control input-sm" value="<?=date('Y-m-d')?>" max="<?=date('Y-m-d')?>">
+                        <button type="submit" name="act" value="sign_now" class="btn btn-primary btn-sm" style="margin-left: 6px;">
+                            <i class="fa-solid fa-fingerprint"></i> Günlük Logu İmzala &amp; Mühürle
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -174,19 +196,22 @@ $pid = file_exists(POSEA_5651_PID) ? trim(file_get_contents(POSEA_5651_PID)) : '
         <div class="panel panel-default">
             <div class="panel-heading" style="display:flex; justify-content:space-between; align-items:center;">
                 <h2 class="panel-title"><i class="fa-solid fa-box-archive"></i> İmzalı ve Zaman Damgalı Günlük Arşiv Dosyaları</h2>
-                <button class="btn btn-xs btn-default" onclick="location.reload();"><i class="fa-solid fa-arrows-rotate"></i> Yenile</button>
+                <div>
+                    <a href="/posea_5651_backup.php" class="btn btn-xs btn-info"><i class="fa-solid fa-cloud-arrow-up"></i> Uzak Yedekleme Ayarları</a>
+                    <button class="btn btn-xs btn-default" onclick="location.reload();" style="margin-left: 6px;"><i class="fa-solid fa-arrows-rotate"></i> Yenile</button>
+                </div>
             </div>
             <div class="panel-body table-responsive">
                 <table class="table table-striped table-hover">
                     <thead>
                         <tr>
                             <th style="width: 130px;">Tarih</th>
-                            <th style="width: 120px;">Satır Sayısı</th>
-                            <th style="width: 120px;">Dosya Boyutu</th>
+                            <th style="width: 110px;">Satır Sayısı</th>
+                            <th style="width: 110px;">Boyut</th>
                             <th>SHA-256 Özeti (Kriptografik Hash)</th>
-                            <th style="width: 180px;">Zaman Damgası (TSA)</th>
-                            <th style="width: 130px;">Hukuki Durum</th>
-                            <th style="width: 220px;" class="text-right">Yasal Dosyaları İndir</th>
+                            <th style="width: 170px;">Zaman Damgası (TSA)</th>
+                            <th style="width: 140px;">Hukuki Durum</th>
+                            <th style="width: 290px;" class="text-right">İndir &amp; Uzak Depolama</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -200,6 +225,7 @@ $pid = file_exists(POSEA_5651_PID) ? trim(file_get_contents(POSEA_5651_PID)) : '
                             <?php foreach (array_reverse($archives) as $d => $a):
                                 $is_ok = !empty($a['tsr_granted']);
                                 $size_kb = round(($a['size_bytes'] ?? 0) / 1024, 1);
+                                $is_synced = !empty($a['remote_synced']);
                             ?>
                                 <tr>
                                     <td><strong><i class="fa-regular fa-calendar"></i> <?=htmlspecialchars($d)?></strong></td>
@@ -222,12 +248,23 @@ $pid = file_exists(POSEA_5651_PID) ? trim(file_get_contents(POSEA_5651_PID)) : '
                                         <?php else: ?>
                                             <span class="label label-danger"><i class="fa-solid fa-triangle-exclamation"></i> DAMGASIZ</span>
                                         <?php endif; ?>
+                                        <?php if ($is_synced): ?>
+                                            <span class="label label-info" title="Uzak sunucuya (SMB/NAS) aktarıldı"><i class="fa-solid fa-cloud-arrow-up"></i> YEDEKLENDİ</span>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="text-right">
-                                        <div class="btn-group btn-group-xs" role="group">
-                                            <a href="?download=log&date=<?=$d?>" class="btn btn-default" title="Log Dosyasını İndir"><i class="fa-solid fa-file-lines"></i> Log</a>
+                                        <form action="/posea_5651_archives.php" method="post" style="display:inline;">
+                                            <input type="hidden" name="date" value="<?=$d?>">
+                                            <input type="hidden" name="act" value="sync_remote">
+                                            <button type="submit" class="btn btn-xs btn-warning" title="Uzak Depolamaya (SMB/NAS) Şimdi Aktar">
+                                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                            </button>
+                                        </form>
+                                        <div class="btn-group btn-group-xs" role="group" style="margin-left: 4px;">
+                                            <a href="?download=zip&date=<?=$d?>" class="btn btn-success" title="Eksiksiz ZIP Paketini İndir (.log + .sha + .tsr)"><i class="fa-solid fa-file-zipper"></i> ZIP</a>
+                                            <a href="?download=log&date=<?=$d?>" class="btn btn-default" title="Ham Log Dosyasını İndir"><i class="fa-solid fa-file-lines"></i> Log</a>
                                             <a href="?download=sha256&date=<?=$d?>" class="btn btn-default" title="SHA-256 Hash Dosyasını İndir"><i class="fa-solid fa-hashtag"></i> SHA</a>
-                                            <a href="?download=tsr&date=<?=$d?>" class="btn btn-primary" title="TÜBİTAK/RFC3161 Zaman Damgasını İndir (.tsr)"><i class="fa-solid fa-stamp"></i> TSR</a>
+                                            <a href="?download=tsr&date=<?=$d?>" class="btn btn-primary" title="Zaman Damgasını İndir (.tsr)"><i class="fa-solid fa-stamp"></i> TSR</a>
                                         </div>
                                     </td>
                                 </tr>

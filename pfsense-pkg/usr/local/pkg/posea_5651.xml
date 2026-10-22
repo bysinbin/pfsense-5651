@@ -29,6 +29,10 @@
             <text>Zaman Damgası (TSA) Testi</text>
             <url>/posea_5651_test.php</url>
         </tab>
+        <tab>
+            <text>Uzak Yedekleme (SMB/NFS/iSCSI)</text>
+            <url>/posea_5651_backup.php</url>
+        </tab>
     </tabs>
     <fields>
         <field>

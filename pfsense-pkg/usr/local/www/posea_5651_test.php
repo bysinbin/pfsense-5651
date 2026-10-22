@@ -33,6 +33,7 @@ $tab_array[] = array(gettext("Genel Ayarlar"), false, "/pkg_edit.php?xml=posea_5
 $tab_array[] = array(gettext("İmzalı Günlük Arşivler"), false, "/posea_5651_archives.php");
 $tab_array[] = array(gettext("Canlı Yasal Log İzleyici"), false, "/posea_5651_live.php");
 $tab_array[] = array(gettext("Zaman Damgası (TSA) Testi"), true, "/posea_5651_test.php");
+$tab_array[] = array(gettext("Uzak Yedekleme (SMB/NFS/iSCSI)"), false, "/posea_5651_backup.php");
 display_top_tabs($tab_array);
 ?>
 
