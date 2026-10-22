@@ -49,6 +49,7 @@ $tab_array[] = array(gettext("İmzalı Günlük Arşivler"), false, "/posea_5651
 $tab_array[] = array(gettext("Canlı Yasal Log İzleyici"), true, "/posea_5651_live.php");
 $tab_array[] = array(gettext("Zaman Damgası (TSA) Testi"), false, "/posea_5651_test.php");
 $tab_array[] = array(gettext("Uzak Yedekleme (SMB/NFS/iSCSI)"), false, "/posea_5651_backup.php");
+$tab_array[] = array(gettext("Denetim & Bütünlük Sertifikası"), false, "/posea_5651_integrity.php");
 display_top_tabs($tab_array);
 ?>
 

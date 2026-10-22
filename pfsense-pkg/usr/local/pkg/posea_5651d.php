@@ -34,6 +34,8 @@ if (file_exists($filter_log_file)) {
 
 $last_dhcp_check = 0;
 $seen_leases = [];
+$last_nat_check = 0;
+$seen_nat_states = [];
 $current_date = date("Y-m-d");
 
 while ($running) {
@@ -170,6 +172,69 @@ while ($running) {
                                 "DHCP_ASSIGN",
                                 "DHCP Kira Ataması: Hostname=" . ($hostname ?: 'N/A')
                             );
+                            fwrite($out_fp, $row);
+                        }
+                    }
+                }
+            }
+            if ($out_fp) fclose($out_fp);
+        }
+    }
+
+
+    // --- 4. NAT OTURUM LOGLARINI PERİYODİK TOPLAMA VE AD SSO İLE EŞLEŞTİRME ---
+    if (!empty($cfg['log_nat']) && ($now - $last_nat_check >= 15)) {
+        $last_nat_check = $now;
+        $pf_output = @shell_exec('/sbin/pfctl -ss 2>/dev/null');
+        if ($pf_output) {
+            $ad_users = [];
+            $ad_user_file = "/var/etc/poseafilter/ad_users.json";
+            if (!file_exists($ad_user_file)) $ad_user_file = "/var/etc/posea_ad_sso/sessions.json";
+            if (file_exists($ad_user_file)) {
+                $ad_users = json_decode(@file_get_contents($ad_user_file), true) ?: [];
+            }
+
+            $active_file = posea_5651_get_active_file($current_date);
+            $out_fp = @fopen($active_file, "a");
+
+            $lines = explode("\n", $pf_output);
+            foreach ($lines as $l) {
+                if (preg_match('/(\S+)\s+(tcp|udp)\s+([\d\.]+):(\d+)\s+\(([\d\.]+):(\d+)\)\s+->\s+([\d\.]+):(\d+)/i', $l, $m)) {
+                    $proto = strtoupper($m[2]);
+                    $wan_ip = $m[3];
+                    $wan_port = $m[4];
+                    $lan_ip = $m[5];
+                    $lan_port = $m[6];
+                    $dst_ip = $m[7];
+                    $dst_port = $m[8];
+
+                    $state_key = "{$lan_ip}:{$lan_port}->{$dst_ip}:{$dst_port}";
+                    if (!isset($seen_nat_states[$state_key])) {
+                        $seen_nat_states[$state_key] = $now;
+
+                        if (count($seen_nat_states) > 20000) {
+                            $seen_nat_states = array_slice($seen_nat_states, -10000, null, true);
+                        }
+
+                        $user_name = $ad_users[$lan_ip]['username'] ?? "-";
+                        $mac = $ad_users[$lan_ip]['mac'] ?? "-";
+
+                        $row = posea_5651_format_row(
+                            date("Y-m-d H:i:s"),
+                            $mac,
+                            $lan_ip,
+                            $lan_port,
+                            $user_name,
+                            $dst_ip,
+                            $dst_port,
+                            $wan_ip,
+                            $wan_port,
+                            $proto,
+                            "NAT_TRANSLATE",
+                            "NAT Oturumu: {$lan_ip}:{$lan_port} -> {$wan_ip}:{$wan_port} -> {$dst_ip}:{$dst_port}"
+                        );
+
+                        if ($out_fp) {
                             fwrite($out_fp, $row);
                         }
                     }

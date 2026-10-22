@@ -33,6 +33,10 @@
             <text>Uzak Yedekleme (SMB/NFS/iSCSI)</text>
             <url>/posea_5651_backup.php</url>
         </tab>
+        <tab>
+            <text>Denetim ve Bütünlük Sertifikası</text>
+            <url>/posea_5651_integrity.php</url>
+        </tab>
     </tabs>
     <fields>
         <field>
