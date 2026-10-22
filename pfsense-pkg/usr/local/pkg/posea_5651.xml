@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE packagegui SYSTEM "../schema/packages.dtd">
+<packagegui>
+    <name>posea5651</name>
+    <version>1.0.0</version>
+    <title>Services: 5651 Yasal Loglama ve TÜBİTAK Zaman Damgası</title>
+    <include_file>/usr/local/pkg/posea_5651.inc</include_file>
+    <menu>
+        <name>5651 Yasal Loglama</name>
+        <section>Services</section>
+        <configfile>posea_5651.xml</configfile>
+        <url>/pkg_edit.php?xml=posea_5651.xml</url>
+    </menu>
+    <tabs>
+        <tab>
+            <text>Genel Ayarlar</text>
+            <url>/pkg_edit.php?xml=posea_5651.xml</url>
+            <active/>
+        </tab>
+        <tab>
+            <text>İmzalı Günlük Arşivler</text>
+            <url>/posea_5651_archives.php</url>
+        </tab>
+        <tab>
+            <text>Canlı Yasal Log İzleyici</text>
+            <url>/posea_5651_live.php</url>
+        </tab>
+        <tab>
+            <text>Zaman Damgası (TSA) Testi</text>
+            <url>/posea_5651_test.php</url>
+        </tab>
+    </tabs>
+    <fields>
+        <field>
+            <name>5651 Yasal Loglama Servis Ayarları</name>
+            <type>listtopic</type>
+        </field>
+        <field>
+            <fielddescr>5651 Loglamayı Etkinleştir</fielddescr>
+            <fieldname>enable</fieldname>
+            <description>5651 sayılı kanun uyumlu IPDR, DHCP, NAT ve AD SSO oturum loglama servisini etkinleştirir.</description>
+            <type>checkbox</type>
+            <default_value>on</default_value>
+        </field>
+        <field>
+            <fielddescr>Log Kapsamı</fielddescr>
+            <fieldname>log_scope</fieldname>
+            <description>Kaydedilecek ağ hareketleri:</description>
+            <type>checkbox</type>
+            <default_value>on</default_value>
+        </field>
+        <field>
+            <fielddescr>DHCP Kira Logları</fielddescr>
+            <fieldname>log_dhcp</fieldname>
+            <description>İç ağ cihazlarının IP, MAC ve kira başlangıç/bitiş loglarını yasal formata ekle.</description>
+            <type>checkbox</type>
+            <default_value>on</default_value>
+        </field>
+        <field>
+            <fielddescr>NAT &amp; Bağlantı Logları</fielddescr>
+            <fieldname>log_nat</fieldname>
+            <description>İç IP, Port, Dış NAT IP, Port ve Hedef IP oturumlarını kaydet.</description>
+            <type>checkbox</type>
+            <default_value>on</default_value>
+        </field>
+        <field>
+            <fielddescr>PoseaFilter Web/DNS Logları</fielddescr>
+            <fieldname>log_filter</fieldname>
+            <description>Kullanıcıların ziyaret ettiği alan adları ve engelleme kararlarını loga dahil et.</description>
+            <type>checkbox</type>
+            <default_value>on</default_value>
+        </field>
+        <field>
+            <fielddescr>AD SSO Kullanıcı Eşleme</fielddescr>
+            <fieldname>ad_sso_enrich</fieldname>
+            <description>Log satırlarına Active Directory kullanıcı adını (sAMAccountName / Ad Soyad) iliştir.</description>
+            <type>checkbox</type>
+            <default_value>on</default_value>
+        </field>
+
+        <field>
+            <name>RFC 3161 Zaman Damgası Sunucusu (TSA)</name>
+            <type>listtopic</type>
+        </field>
+        <field>
+            <fielddescr>Zaman Damgası Sağlayıcısı</fielddescr>
+            <fieldname>tsa_provider</fieldname>
+            <description>Hukuki geçerlilik için kullanılacak Zaman Damgası Otoritesi (TSA).</description>
+            <type>select</type>
+            <options>
+                <option><name>TÜBİTAK KamuSM (kamusm.gov.tr - Önerilen Resmi)</name><value>tubitak</value></option>
+                <option><name>Türktrust Zaman Damgası (turktrust.com.tr)</name><value>turktrust</value></option>
+                <option><name>E-Tuğra EBG (e-tugra.com.tr)</name><value>etugra</value></option>
+                <option><name>FreeTSA Test Sunucusu (freetsa.org - Ücretsiz Geliştirme/Test)</name><value>freetsa</value></option>
+                <option><name>Özel / Yerel TSA Sunucusu (Custom URL)</name><value>custom</value></option>
+            </options>
+            <default_value>freetsa</default_value>
+        </field>
+        <field>
+            <fielddescr>TSA Sunucu URL</fielddescr>
+            <fieldname>tsa_url</fieldname>
+            <description>RFC 3161 HTTP(S) Time Stamp Authority adresi (Örn: http://zds.kamusm.gov.tr veya https://freetsa.org/tsr).</description>
+            <type>input</type>
+            <default_value>https://freetsa.org/tsr</default_value>
+        </field>
+        <field>
+            <fielddescr>TSA Kullanıcı Adı / Müşteri Kodu</fielddescr>
+            <fieldname>tsa_user</fieldname>
+            <description>TÜBİTAK veya E-İmza sağlayıcınızın verdiği hesap/kullanıcı adı (Gerekmiyorsa boş bırakın).</description>
+            <type>input</type>
+        </field>
+        <field>
+            <fielddescr>TSA Parolası / API Anahtarı</fielddescr>
+            <fieldname>tsa_pass</fieldname>
+            <description>Zaman damgası kontörü/yetkilendirme parolası.</description>
+            <type>password</type>
+        </field>
+        <field>
+            <fielddescr>Özetleme Algoritması</fielddescr>
+            <fieldname>tsa_hash</fieldname>
+            <description>Log dosyasının kriptografik parmak izi algoritması.</description>
+            <type>select</type>
+            <options>
+                <option><name>SHA-256 (Standart - Yasal Uyumlu)</name><value>sha256</value></option>
+                <option><name>SHA-512 (Yüksek Güvenlikli)</name><value>sha512</value></option>
+            </options>
+            <default_value>sha256</default_value>
+        </field>
+
+        <field>
+            <name>Arşivleme ve Saklama Süresi</name>
+            <type>listtopic</type>
+        </field>
+        <field>
+            <fielddescr>Yasal Saklama Süresi (Gün)</fielddescr>
+            <fieldname>retention_days</fieldname>
+            <description>Logların sistemde saklanma süresi (5651 sayılı kanun gereği en az 2 yıl = 730 gün olmalıdır).</description>
+            <type>input</type>
+            <default_value>730</default_value>
+        </field>
+        <field>
+            <fielddescr>Günlük İmzalanma Saati</fielddescr>
+            <fieldname>sign_time</fieldname>
+            <description>Günün logunun kapatılıp zaman damgası vurulacağı saat (Varsayılan: 00:01 gece yarısı).</description>
+            <type>input</type>
+            <default_value>00:01</default_value>
+        </field>
+        <field>
+            <fielddescr>Otomatik Gzip Sıkıştırma</fielddescr>
+            <fieldname>gzip_compress</fieldname>
+            <description>Damgalanan arşiv dosyalarını disk tasarrufu için .gz olarak sıkıştır.</description>
+            <type>checkbox</type>
+            <default_value>on</default_value>
+        </field>
+    </fields>
+    <custom_php_install_command>
+        posea_5651_install();
+    </custom_php_install_command>
+    <custom_php_deinstall_command>
+        posea_5651_deinstall();
+    </custom_php_deinstall_command>
+    <custom_php_resync_config_command>
+        posea_5651_resync();
+    </custom_php_resync_config_command>
+</packagegui>
