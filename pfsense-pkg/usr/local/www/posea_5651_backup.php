@@ -145,11 +145,48 @@ foreach ($archives as $a) {
     color: #94a3b8;
 }
 .proto-box {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 20px;
-    margin-top: 15px;
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    border-radius: 8px !important;
+    padding: 20px !important;
+    margin-top: 15px !important;
+    color: #f8fafc !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.25) !important;
+}
+.proto-box h4 {
+    color: #38bdf8 !important;
+    font-weight: 700 !important;
+    margin-top: 0 !important;
+    margin-bottom: 8px !important;
+}
+.proto-box p.text-muted {
+    color: #94a3b8 !important;
+}
+.proto-box .control-label,
+#backup-form .control-label {
+    color: #cbd5e1 !important;
+    font-weight: 600 !important;
+}
+.proto-box .form-control,
+#backup-form select.form-control,
+#backup-form input.form-control {
+    background-color: #0f172a !important;
+    border: 1px solid #475569 !important;
+    color: #f8fafc !important;
+}
+.proto-box .form-control:focus,
+#backup-form .form-control:focus {
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2) !important;
+}
+.proto-box .form-control::placeholder {
+    color: #64748b !important;
+}
+#backup-form .checkbox label {
+    color: #f1f5f9 !important;
+}
+#backup-form .help-block {
+    color: #94a3b8 !important;
 }
 </style>
 

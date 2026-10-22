@@ -176,14 +176,14 @@ $pid = file_exists(POSEA_5651_PID) ? trim(file_get_contents(POSEA_5651_PID)) : '
 
         <!-- Manual Actions Card -->
         <div class="panel panel-default" style="margin-top: 10px;">
-            <div class="panel-body" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+            <div class="panel-body" style="background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #f8fafc;">
                 <form action="/posea_5651_archives.php" method="post" class="form-inline" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
                     <div>
-                        <strong><i class="fa-solid fa-stamp text-primary"></i> Günlük Logu Kapat ve Zaman Damgası Bas:</strong>
-                        <span class="text-muted" style="margin-left: 10px;">(Normal şartlarda her gece saat 23:59:50'de otomatik gerçekleşir)</span>
+                        <strong style="color: #38bdf8;"><i class="fa-solid fa-stamp"></i> Günlük Logu Kapat ve Zaman Damgası Bas:</strong>
+                        <span style="color: #94a3b8; margin-left: 10px;">(Normal şartlarda her gece saat 23:59:50'de otomatik gerçekleşir)</span>
                     </div>
                     <div style="margin-top: 5px;">
-                        <input type="date" name="date" class="form-control input-sm" value="<?=date('Y-m-d')?>" max="<?=date('Y-m-d')?>">
+                        <input type="date" name="date" class="form-control input-sm" style="background: #0f172a; color: #f8fafc; border: 1px solid #475569;" value="<?=date('Y-m-d')?>" max="<?=date('Y-m-d')?>">
                         <button type="submit" name="act" value="sign_now" class="btn btn-primary btn-sm" style="margin-left: 6px;">
                             <i class="fa-solid fa-fingerprint"></i> Günlük Logu İmzala &amp; Mühürle
                         </button>
